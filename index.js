@@ -1,7 +1,7 @@
 const cors = require("cors");
 const express = require("express");
 const { success, error } = require("consola");
-const { MongoClient } = require('mongodb');
+const { connect } = require("mongoose");
 
 // Bring in the app constants
 const { PORT } = require("./config");
@@ -13,15 +13,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// User Router middleware
+app.use("/users", require("./routes/users.js"));
+
 // Connect with the Mongo database cluster and start the server
 const { CLUSTER_URL, DB_USERNAME, DB_PASSWORD, DB_NAME } = require("./config");
 const uri = `mongodb+srv://${DB_USERNAME}:${DB_PASSWORD}@${CLUSTER_URL}/${DB_NAME}?retryWrites=true&w=majority`; 
-console.log(uri);            
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
 const startApp = async () => {
+
   try {
-    await client.connect();
+
+    await connect(uri, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
 
     success({ 
       message: `Successfully connected to database cluster \n${CLUSTER_URL}`,
