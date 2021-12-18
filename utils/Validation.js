@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const { error } = require("consola");
 
 const validateSignup = (req, res, next) => {
   
@@ -13,10 +14,15 @@ const validateSignup = (req, res, next) => {
   
   });
 
-  const { error, value } = schema.validate(req.body);
+  const { error: err, value } = schema.validate(req.body);
 
-  if (error) {
-    console.log(error.details.map(x => x.message).join(', '));
+  if (err) {
+
+    error({
+      message: err,
+      badge: true
+    });
+
     return res.status(400).json({
       message: "Invalid input",
       success: false

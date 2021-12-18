@@ -6,5 +6,6 @@ module.exports = {
   DB_USERNAME: process.env.APP_DB_USERNAME,
   DB_PASSWORD: process.env.APP_DB_PASSWORD,
   PORT: process.env.APP_PORT,
-  SECRET: process.env.APP_SECRET
+  GMAIL_ADDRESS: process.env.GMAIL_ADDRESS,
+  GMAIL_PASSWORD: process.env.GMAIL_PASSWORD
 };

@@ -1,15 +1,20 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User.js");
+const nodemailer = require("nodemailer");
+const { GMAIL_ADDRESS, GMAIL_PASSWORD } = require("../config");
+const { success, error } = require("consola");
 
 /** 
  * @DESC To sign up user
  */
-const signupUser = async (userDetailsEntered, res) => {
-
+const signupUser = async (req, res, next) => {
+  
   try {
 
+    let { name, email, phoneNumber, gender, about, password } = req.body;
+    
     // check if email already exists
-    let doesEmailExist = await User.findOne({ email: userDetailsEntered.email });
+    let doesEmailExist = await User.findOne({ email });
 
     if (doesEmailExist) {
       return res.status(400).json({
@@ -19,7 +24,7 @@ const signupUser = async (userDetailsEntered, res) => {
     }
 
     // check if phone number already exists
-    let doesPhoneNumberExist = await User.findOne({ phoneNumber: userDetailsEntered.phoneNumber });
+    let doesPhoneNumberExist = await User.findOne({ phoneNumber });
 
     if (doesPhoneNumberExist) {
       return res.status(400).json({
@@ -29,10 +34,9 @@ const signupUser = async (userDetailsEntered, res) => {
     }
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash(userDetailsEntered.password, 12);
+    const hashedPassword = await bcrypt.hash(password, 12);
     
     // Save user details to database
-    let { name, email, phoneNumber, gender, about } = userDetailsEntered;
     const newUser = new User({
       name,
       email,
@@ -42,15 +46,21 @@ const signupUser = async (userDetailsEntered, res) => {
       hashedPassword
     });
     await newUser.save();
-
-    return res.status(201).json({
+    
+    res.status(201).json({
       message: "Hurray! You are successfully signed up",
       success: true
     });
 
+    return next();
+
   } catch (err) {
 
-    console.log(err);
+    error({
+      message: err,
+      badge: true
+    });
+    
     return res.status(500).json({
       message: "Unable to sign up. Please try again",
       success: false
@@ -60,4 +70,50 @@ const signupUser = async (userDetailsEntered, res) => {
 
 };
 
-module.exports = { signupUser };
+const sendWelcomeEmail = (req, res) => {
+  
+  const senderEmailAddress = GMAIL_ADDRESS;
+  const senderEmailPassword = GMAIL_PASSWORD;
+  const recipientEmailAddress = req.body.email;
+
+  let transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: senderEmailAddress,
+      pass: senderEmailPassword
+    },
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
+
+  let mailOptions = {
+    from: senderEmailPassword,
+    to : recipientEmailAddress,
+    subject: "Welcome to Dhanam",
+    text: `Hi ${req.body.name},\n\n` + 
+          `Thank you for signing up on Dhanam.\n\n` + 
+          `We welcome you to our Dhanam community where you can make ` + 
+          `your investing easy, engaging and more rewarding.\n\n` + 
+          `Best,\n` + 
+          `Dhanam Team
+    `
+  };
+
+  transporter.sendMail(mailOptions)
+    .then(res => {
+      success({ 
+        message: "Welcome email sent successfully!",
+        badge: true
+      });
+    })
+    .catch(err => {
+      error({
+        message: err,
+        badge: true
+      });
+    });
+
+};
+
+module.exports = { signupUser, sendWelcomeEmail };
